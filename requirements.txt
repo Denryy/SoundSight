@@ -1,0 +1,17 @@
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+websockets>=12.0
+python-dotenv>=1.0.0
+openai-whisper>=20231117
+torch>=2.2.0
+torchaudio>=2.2.0
+# transformers must stay <5: v5 requires torch>=2.4, but the cu121 image pins torch 2.3.1 (kz ASR pipeline).
+# transformers держим <5: v5 требует torch>=2.4, а образ ставит torch 2.3.1 cu121 (нужно для kz-ASR).
+# floor 4.45 = first release with whisper-large-v3-turbo support (kz model is a turbo fine-tune).
+transformers>=4.45.0,<5
+accelerate>=0.26.0,<2  # required by the kz loader's low_cpu_mem_usage=True / нужен kz-загрузчику
+numpy>=1.26.0
+argostranslate>=1.9.0
+
+# Optional: only used when SOUNDSIGHT_ENABLE_LLM=true (agent/llm_refiner.py).
+httpx>=0.27.0

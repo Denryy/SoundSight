@@ -1,0 +1,34 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+.env.example
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+*.pt
+*.bin
+*.safetensors
+.DS_Store
+CLAUDE.md
+.codex
+
+# Dependencies (frontend-react/.gitignore also covers its own)
+node_modules/
+
+# Build / run / tooling logs
+*.log
+
+# Local agent config, editor, and scratch harnesses
+.claude/
+.harness/
+.idea/
+.vscode/
+*.tsbuildinfo
+
+# Personal scans / award certificates (PII) — not app assets, keep private
+assets/IMG_*.JPG
+assets/IMG_*.jpg
+assets/IMG_*.jpeg

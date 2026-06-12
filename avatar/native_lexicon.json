@@ -1,0 +1,170 @@
+{
+  "v": 1,
+  "_comment": "Лексикон собственного 3D-аватара SoundSight. Ключи — EN-глоссы (текст приходит после перевода RU/KZ→EN). Каждый жест — клип из ключевых кадров в формате Pose (см. frontend-react/src/avatar3d/poseTypes.ts и docs/native_avatar.md). Углы в градусах. Кадры частичные: незаданные суставы берутся из предыдущего кадра / базовой позы. Поля: t — мс от начала клипа, hold — пауза на последнем кадре. Формы заданы приблизительно — доводите в экране «Аватар-лаб».",
+  "glosses": {
+    "hello": {
+      "ru": "привет / здравствуйте",
+      "aliases": ["hi", "hey", "greetings"],
+      "hold": 220,
+      "frames": [
+        { "t": 0,
+          "pose": { "rArm": { "sh": [46, 72, 44], "el": 76, "tw": -24, "wr": [0, 10] },
+                    "rHand": { "thumb": { "spread": 30, "oppose": 0, "curl": 0 },
+                               "index": { "curl": 0 }, "middle": { "curl": 0 },
+                               "ring": { "curl": 0 }, "pinky": { "curl": 0 } } } },
+        { "t": 360,
+          "pose": { "rArm": { "sh": [48, 74, 44], "el": 74, "tw": -24, "wr": [0, -8] } } },
+        { "t": 680,
+          "pose": { "rArm": { "sh": [46, 72, 44], "el": 76, "tw": -24, "wr": [0, 12] } } }
+      ]
+    },
+    "thanks": {
+      "ru": "спасибо",
+      "aliases": ["thank"],
+      "hold": 220,
+      "frames": [
+        { "t": 0,
+          "pose": { "rArm": { "sh": [104, 14, 0], "el": 128, "tw": -20, "wr": [0, 0] },
+                    "rHand": { "thumb": { "spread": 25 }, "index": { "curl": 0 },
+                               "middle": { "curl": 0 }, "ring": { "curl": 0 }, "pinky": { "curl": 0 } } } },
+        { "t": 430,
+          "pose": { "rArm": { "sh": [68, 16, 0], "el": 52, "tw": 35, "wr": [0, 0] } } }
+      ]
+    },
+    "yes": {
+      "ru": "да",
+      "aliases": ["yeah", "yep"],
+      "hold": 160,
+      "frames": [
+        { "t": 0,
+          "pose": { "rArm": { "sh": [52, 16, 0], "el": 102, "tw": -45, "wr": [0, 0] },
+                    "rHand": { "thumb": { "oppose": 60, "curl": [30, 25] },
+                               "index": { "curl": 95 }, "middle": { "curl": 95 },
+                               "ring": { "curl": 95 }, "pinky": { "curl": 95 } } } },
+        { "t": 220, "pose": { "rArm": { "wr": [38, 0] } } },
+        { "t": 440, "pose": { "rArm": { "wr": [4, 0] } } },
+        { "t": 640, "pose": { "rArm": { "wr": [38, 0] } } }
+      ]
+    },
+    "no": {
+      "ru": "нет",
+      "aliases": ["not", "nope"],
+      "hold": 180,
+      "frames": [
+        { "t": 0,
+          "pose": { "rArm": { "sh": [55, 20, 0], "el": 100, "tw": -65, "wr": [0, 0] },
+                    "rHand": { "thumb": { "spread": 45, "oppose": 10, "curl": 0 },
+                               "index": { "spread": 3, "curl": 0 }, "middle": { "spread": 6, "curl": 0 },
+                               "ring": { "curl": 92 }, "pinky": { "curl": 92 } } } },
+        { "t": 240,
+          "pose": { "rHand": { "thumb": { "spread": 18, "oppose": 38, "curl": [18, 12] },
+                               "index": { "curl": [48, 38, 18] }, "middle": { "curl": [48, 38, 18] } } } },
+        { "t": 470,
+          "pose": { "rHand": { "thumb": { "spread": 40, "oppose": 12, "curl": 0 },
+                               "index": { "curl": 8 }, "middle": { "curl": 8 } } } }
+      ]
+    },
+    "please": {
+      "ru": "пожалуйста",
+      "aliases": [],
+      "hold": 160,
+      "frames": [
+        { "t": 0,
+          "pose": { "rArm": { "sh": [70, 8, 0], "el": 116, "tw": -88, "wr": [0, 0] },
+                    "rHand": { "thumb": { "spread": 25 }, "index": { "curl": 0 }, "middle": { "curl": 0 },
+                               "ring": { "curl": 0 }, "pinky": { "curl": 0 } } } },
+        { "t": 260, "pose": { "rArm": { "sh": [77, 14, 0] } } },
+        { "t": 520, "pose": { "rArm": { "sh": [70, 20, 0] } } },
+        { "t": 780, "pose": { "rArm": { "sh": [63, 14, 0] } } },
+        { "t": 1040, "pose": { "rArm": { "sh": [70, 8, 0] } } }
+      ]
+    },
+    "good": {
+      "ru": "хорошо",
+      "aliases": ["great", "fine", "ok", "okay", "well"],
+      "hold": 240,
+      "frames": [
+        { "t": 0,
+          "pose": { "lArm": { "sh": [55, 12, 0], "el": 96, "tw": 60, "wr": [0, 0] },
+                    "lHand": { "thumb": { "spread": 30 }, "index": { "curl": 0 }, "middle": { "curl": 0 },
+                               "ring": { "curl": 0 }, "pinky": { "curl": 0 } },
+                    "rArm": { "sh": [100, 12, 0], "el": 124, "tw": -25, "wr": [0, 0] },
+                    "rHand": { "thumb": { "spread": 25 }, "index": { "curl": 0 }, "middle": { "curl": 0 },
+                               "ring": { "curl": 0 }, "pinky": { "curl": 0 } } } },
+        { "t": 460,
+          "pose": { "rArm": { "sh": [56, 12, 0], "el": 84, "tw": 52, "wr": [0, 0] } } }
+      ]
+    },
+    "important": {
+      "ru": "важно",
+      "aliases": ["importance", "significant"],
+      "hold": 220,
+      "frames": [
+        { "t": 0,
+          "pose": { "rArm": { "sh": [52, 26, 0], "el": 96, "tw": -18, "wr": [0, 0] },
+                    "lArm": { "sh": [52, 26, 0], "el": 96, "tw": -18, "wr": [0, 0] },
+                    "rHand": { "thumb": { "oppose": 45, "curl": [22, 18] },
+                               "index": { "curl": [46, 42, 20] }, "middle": { "curl": 0, "spread": 4 },
+                               "ring": { "curl": 0, "spread": 4 }, "pinky": { "curl": 0, "spread": 6 } },
+                    "lHand": { "thumb": { "oppose": 45, "curl": [22, 18] },
+                               "index": { "curl": [46, 42, 20] }, "middle": { "curl": 0, "spread": 4 },
+                               "ring": { "curl": 0, "spread": 4 }, "pinky": { "curl": 0, "spread": 6 } } } },
+        { "t": 420,
+          "pose": { "rArm": { "sh": [66, 22, 0], "tw": -70 },
+                    "lArm": { "sh": [66, 22, 0], "tw": -70 } } }
+      ]
+    },
+    "question": {
+      "ru": "вопрос",
+      "aliases": ["questions", "ask"],
+      "hold": 200,
+      "frames": [
+        { "t": 0,
+          "pose": { "rArm": { "sh": [62, 18, 0], "el": 96, "tw": -70, "wr": [0, 0] },
+                    "rHand": { "thumb": { "oppose": 55, "curl": [30, 25] },
+                               "index": { "curl": 0 }, "middle": { "curl": 92 },
+                               "ring": { "curl": 92 }, "pinky": { "curl": 92 } } } },
+        { "t": 240, "pose": { "rArm": { "wr": [8, -18] } } },
+        { "t": 480, "pose": { "rArm": { "wr": [34, 6] } } },
+        { "t": 690, "pose": { "rArm": { "el": 84, "wr": [30, 0] } } }
+      ]
+    },
+    "today": {
+      "ru": "сегодня / сейчас",
+      "aliases": ["now"],
+      "hold": 200,
+      "frames": [
+        { "t": 0,
+          "pose": { "rArm": { "sh": [58, 22, 0], "el": 100, "tw": 38, "wr": [0, 0] },
+                    "lArm": { "sh": [58, 22, 0], "el": 100, "tw": 38, "wr": [0, 0] },
+                    "rHand": { "thumb": { "spread": 35 }, "index": { "curl": 0 }, "middle": { "curl": 0 },
+                               "ring": { "curl": 0 }, "pinky": { "curl": 0 } },
+                    "lHand": { "thumb": { "spread": 35 }, "index": { "curl": 0 }, "middle": { "curl": 0 },
+                               "ring": { "curl": 0 }, "pinky": { "curl": 0 } } } },
+        { "t": 300,
+          "pose": { "rArm": { "sh": [48, 22, 0], "el": 78 }, "lArm": { "sh": [48, 22, 0], "el": 78 } } },
+        { "t": 500,
+          "pose": { "rArm": { "el": 92 }, "lArm": { "el": 92 } } }
+      ]
+    },
+    "learn": {
+      "ru": "учить / изучать",
+      "aliases": ["study", "studying", "learning"],
+      "hold": 220,
+      "frames": [
+        { "t": 0,
+          "pose": { "lArm": { "sh": [52, 14, 0], "el": 94, "tw": 55, "wr": [0, 0] },
+                    "lHand": { "thumb": { "spread": 28 }, "index": { "curl": 0 }, "middle": { "curl": 0 },
+                               "ring": { "curl": 0 }, "pinky": { "curl": 0 } },
+                    "rArm": { "sh": [54, 12, 0], "el": 96, "tw": -30, "wr": [12, 0] },
+                    "rHand": { "thumb": { "spread": 30, "oppose": 10 }, "index": { "curl": 12 },
+                               "middle": { "curl": 12 }, "ring": { "curl": 12 }, "pinky": { "curl": 12 } } } },
+        { "t": 430,
+          "pose": { "rArm": { "sh": [108, 20, 0], "el": 122, "tw": -20, "wr": [0, 0] },
+                    "rHand": { "thumb": { "oppose": 50, "curl": [28, 22] }, "index": { "curl": [50, 45, 25] },
+                               "middle": { "curl": [50, 45, 25] }, "ring": { "curl": [50, 45, 25] },
+                               "pinky": { "curl": [50, 45, 25] } } } }
+      ]
+    }
+  }
+}

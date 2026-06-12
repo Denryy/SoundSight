@@ -1,0 +1,14 @@
+{
+  "description": "SoundSight CWASA avatar configuration",
+  "avsfull": ["anna", "marc", "francoise", "luna", "siggi"],
+  "avSettings": [
+    {
+      "width": 320,
+      "height": 360,
+      "avList": "avsfull",
+      "initAv": "marc",
+      "allowFrameSteps": false,
+      "allowSiGMLText": true
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+# SoundSight — поднять одной командой:
+#
+#     docker compose up --build
+#
+# Первый запуск долгий: качаются ML-зависимости (torch/whisper/transformers) при
+# сборке образа и веса модели + пакет перевода при первом старте. Дальше — быстро
+# (всё кэшируется в томах ниже).
+#
+# Открыть после старта: http://localhost:8000
+
+services:
+  soundsight:
+    build: .
+    container_name: soundsight
+    ports:
+      - "8000:8000"
+    # .env не запекается в образ (.dockerignore), но подаётся в рантайме отсюда.
+    # Здесь живут SOUNDSIGHT_ENABLE_LLM / SOUNDSIGHT_LLM_* (Gemini) и прочие секреты.
+    env_file:
+      - .env
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8000"
+      # Язык распознавания по умолчанию: auto | ru | en | kz
+      ASR_MODE: "ru"
+      # На GPU автоматически берётся ASR_MODEL (large-v3-turbo, fp16).
+      # ASR_MODEL_CPU — фолбэк, если GPU недоступен или словит OOM.
+      ASR_MODEL_CPU: "base"
+      SIGN_LANG: "hybrid"
+      SOUNDSIGHT_LOG_LEVEL: "INFO"
+      # ── Опциональный ИИ-слой резюме (включить — раскомментировать) ──
+      # SOUNDSIGHT_ENABLE_LLM: "true"
+      # SOUNDSIGHT_LLM_BASE_URL: "https://api.openai.com/v1"
+      # SOUNDSIGHT_LLM_MODEL: "gpt-4o-mini"
+      # SOUNDSIGHT_LLM_API_KEY: "sk-..."
+    volumes:
+      # Кэш весов модели (whisper) и torch.hub — переживает перезапуски.
+      - soundsight-models:/root/.cache
+      # Кэш офлайн-переводчика argostranslate (RU→EN пакет ~100 МБ).
+      - soundsight-argos:/root/.local
+    # Проброс NVIDIA GPU в контейнер (RTX 3050). Требует Docker Desktop с WSL2
+    # и NVIDIA-драйвера с поддержкой WSL-CUDA. Без GPU убрать этот блок —
+    # код сам сделает фолбэк на CPU (модель ASR_MODEL_CPU).
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      # Модель грузится при старте — даём время, прежде чем считать контейнер нездоровым.
+      start_period: 180s
+
+volumes:
+  soundsight-models:
+  soundsight-argos:

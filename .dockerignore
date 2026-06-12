@@ -1,0 +1,33 @@
+# Git / IDE
+.git
+.gitignore
+.idea
+.vscode
+
+# Python caches / envs
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Node — ставится/собирается внутри образа (Stage 1)
+frontend-react/node_modules/
+frontend-react/dist/
+**/node_modules/
+
+# Локальные модели/веса (качаются в образ/тома, не нужны в контексте)
+*.pt
+*.bin
+*.safetensors
+
+# Секреты — НЕ запекать в образ (env подаётся через docker-compose в рантайме)
+.env
+.env.*
+
+# Прочее
+.DS_Store
+*.log
+docs/

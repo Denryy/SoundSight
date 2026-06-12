@@ -1,0 +1,98 @@
+/* SoundSight Console — светлая, спокойная, редакторская тема.
+   Тёплая «бумага» + индиго-акцент. Красный зарезервирован только под запись (rec).
+   Тёмная тема — опционально через [data-theme="dark"]. */
+
+:root {
+  color-scheme: light;
+
+  /* Поверхности — тёплый нейтральный «paper» */
+  --bg: #f4f3ef;
+  --bg-2: #edebe4;
+  --surface: #ffffff;
+  --surface-2: #f7f6f2;
+  --surface-3: #efece6;
+  --border: #e6e3da;
+  --border-strong: #d6d2c7;
+
+  /* Текст — тёплый чернильный */
+  --text: #1b1a17;
+  --text-muted: #5c5950;
+  --text-dim: #8b877c;
+
+  /* Акцент — индиго (бренд/активное/ссылки), дозированно */
+  --accent: #4f46e5;
+  --accent-bright: #4338ca;
+  --accent-deep: #3730a3;
+  --accent-soft: rgba(79, 70, 229, 0.1);
+  --accent-softer: rgba(79, 70, 229, 0.05);
+  --accent-line: rgba(79, 70, 229, 0.22);
+
+  /* Запись — красный сигнал (только rec: точка статуса, стоп) */
+  --rec: #e5484d;
+  --rec-soft: rgba(229, 72, 77, 0.12);
+
+  /* Вторичный прохладный (для аватара/градиентов) */
+  --cool: #0ea5a0;
+  --cool-soft: rgba(14, 165, 160, 0.12);
+
+  --warm: #e08a2b;
+  --success: #16a34a;
+
+  /* Эффекты — сдержанные */
+  --grad-accent: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  --grad-text: linear-gradient(120deg, #4f46e5, #0ea5a0);
+  --grad-surface: linear-gradient(168deg, #ffffff, #f8f7f3);
+  --glow-accent: 0 14px 30px -16px rgba(79, 70, 229, 0.4);
+  --focus-ring: #4f46e5;
+
+  --shadow-sm: 0 1px 3px rgba(28, 26, 22, 0.06), 0 2px 8px -4px rgba(28, 26, 22, 0.08);
+  --shadow: 0 12px 32px -18px rgba(28, 26, 22, 0.22);
+  --shadow-lg: 0 28px 64px -28px rgba(28, 26, 22, 0.28);
+
+  /* Радиусы — чуть строже, редакторские */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+
+  /* Типографика */
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-display: "Space Grotesk", var(--font);
+  --font-mono: "SFMono-Regular", ui-monospace, "JetBrains Mono", "Cascadia Code",
+    Consolas, monospace;
+
+  /* Масштаб субтитров (регулируется в UI, ТЗ §8) */
+  --subtitle-scale: 1;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f0e13;
+  --bg-2: #15131b;
+  --surface: #1a1822;
+  --surface-2: #221f2c;
+  --surface-3: #2b2736;
+  --border: #2c2838;
+  --border-strong: #3c3750;
+  --text: #f3f1f8;
+  --text-muted: #b3acc2;
+  --text-dim: #7f7991;
+  --accent: #8b83ff;
+  --accent-bright: #a99dff;
+  --accent-deep: #6f63f0;
+  --accent-soft: rgba(139, 131, 255, 0.16);
+  --accent-softer: rgba(139, 131, 255, 0.08);
+  --accent-line: rgba(139, 131, 255, 0.34);
+  --rec: #ff5a60;
+  --rec-soft: rgba(255, 90, 96, 0.16);
+  --cool: #2dd4bf;
+  --cool-soft: rgba(45, 212, 191, 0.16);
+  --success: #34d399;
+  --grad-surface: linear-gradient(168deg, var(--surface-2), var(--surface));
+  --shadow-sm: 0 4px 16px -8px rgba(0, 0, 0, 0.6);
+  --shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 44px 96px -32px rgba(0, 0, 0, 0.8);
+  --glow-accent: 0 18px 44px -16px rgba(139, 131, 255, 0.5);
+  --focus-ring: #a99dff;
+}

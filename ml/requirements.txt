@@ -1,0 +1,6 @@
+# Захват жестов из видео (ml/extract_pose_clip.py).
+# Ставится ОТДЕЛЬНО от requirements.txt бэкенда — mediapipe тяжёлый и
+# серверу не нужен:  pip install -r ml/requirements.txt
+mediapipe>=0.10,<0.11      # Holistic: поза + кисти (модели внутри wheel, офлайн)
+opencv-python>=4.8
+numpy>=1.24
