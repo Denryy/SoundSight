@@ -2,7 +2,7 @@
 Audio processor: parse frame → resample → VAD → ASR → Agent → outputs.
 
 Wire protocol (8-byte header):
-  Bytes 0-3: uint32 BE 0x4C414100 ("LAA\0")
+  Bytes 0-3: uint32 BE 0x53535400 ("SST\0")
   Bytes 4-7: uint32 LE sample rate
   Bytes 8+:  float32 LE mono PCM
 
@@ -51,7 +51,7 @@ INTERIM_EVERY_SEC_GPU = 0.6
 PREROLL_SEC = 0.3
 """Lead-in kept before speech is detected so word onsets aren't clipped."""
 
-HEADER_MAGIC = 0x4C414100
+HEADER_MAGIC = 0x53535400  # "SST\0" (SoundSighT)
 HEADER_SIZE = 8
 FLOAT32_SIZE = 4
 

@@ -1,7 +1,7 @@
 # SoundSight Frontend — дизайн-спецификация (v1)
 
 **Дата:** 2026-06-05
-**Источник требований:** `C:\Users\izbas\Downloads\LAA_Frontend_TZ.md` (ТЗ v1.0)
+**Источник требований:** `SoundSight_Frontend_TZ.md` (ТЗ v1.0)
 
 ## Решения
 
@@ -24,7 +24,7 @@
 
 - **types.ts** — типы REST-ответов и WS-сообщений (`subtitle_interim`, `subtitle`).
 - **api.ts** — типизированный REST-клиент (относительный origin).
-- **audioFrame.ts** — `buildAudioFrame()` (магия `0x4C414100` BE + sampleRate LE +
+- **audioFrame.ts** — `buildAudioFrame()` (магия `0x53535400` BE + sampleRate LE +
   float32 PCM LE), `subtitlesWsUrl()` (ws/wss).
 - **cwasa.ts** — обёртка глобального движка CWASA: init, хуки
   `avatarloaded/avatarready/animidle`, последовательная очередь жестов (лимит 5,

@@ -1,7 +1,7 @@
 # SoundSight Frontend (новый дизайн)
 
 Новый фронтенд для **SoundSight — Lecture Accessibility Agent** (React + Vite + TypeScript).
-Совместим с существующим бэкендом по контракту из ТЗ (`LAA_Frontend_TZ.md`, §6).
+Совместим с существующим бэкендом по контракту из ТЗ (`SoundSight_Frontend_TZ.md`, §6).
 
 ## Запуск (разработка)
 
@@ -43,7 +43,7 @@ src/
   integration/   ФИКСИРОВАННЫЙ слой контракта (ТЗ §6.2–6.6) — менять только за бэкендом
     types.ts       типы REST + WS-сообщений
     api.ts         REST-клиент
-    audioFrame.ts  сборка бинарного аудио-кадра (магия "LAA\0")
+    audioFrame.ts  сборка бинарного аудио-кадра (магия "SST\0")
     cwasa.ts       обёртка движка аватара + очередь жестов
     session.ts     жизненный цикл: REST + WebSocket + захват аудио
   state/         SessionContext — глобальное состояние сессии для UI

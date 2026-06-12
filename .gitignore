@@ -24,6 +24,7 @@ node_modules/
 # Local agent config, editor, and scratch harnesses
 .claude/
 .harness/
+.understand-anything/
 .idea/
 .vscode/
 *.tsbuildinfo

@@ -439,7 +439,7 @@ async function startCapture() {
       n++;
       const header = new ArrayBuffer(8);
       const v = new DataView(header);
-      v.setUint32(0, 0x4C414100, false);
+      v.setUint32(0, 0x53535400, false); // "SST\0" (SoundSighT)
       v.setUint32(4, msg.sampleRate, true);
       const frame = new Uint8Array(8 + msg.buffer.byteLength);
       frame.set(new Uint8Array(header), 0);
