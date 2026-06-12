@@ -115,7 +115,7 @@ async def _call_llm(prompt: str, max_tokens: Optional[int] = None) -> Optional[s
     try:
         import httpx
     except ImportError:
-        logger.warning("httpx not installed — LLM calls disabled. pip install httpx")
+        logger.warning("httpx not installed — LLM calls disabled. uv sync (or uv pip install httpx)")
         return None
 
     if urlparse(_BASE_URL).scheme not in ("http", "https"):

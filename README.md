@@ -203,10 +203,10 @@ See [`docs/baseline_vs_agent.md`](docs/baseline_vs_agent.md)
 ## How to run
 
 ```bash
-pip install -r requirements.txt
+uv sync                       # install deps (uv manages the venv + uv.lock)
 
 # copy and edit .env (set ASR_MODEL, PORT, etc.)
-python main.py
+uv run python main.py
 # → http://localhost:8000
 ```
 

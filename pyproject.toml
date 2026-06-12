@@ -1,0 +1,45 @@
+[project]
+name = "soundsight"
+version = "0.1.0"
+description = "SoundSight — Lecture Accessibility Agent: live speech → subtitles, sign-language avatar, and auto-refreshing session summary."
+readme = "README.md"
+requires-python = ">=3.11"
+
+# Рантайм-зависимости бэкенда. Зеркалят requirements.txt (его держит Docker-сборка
+# ради тонко настроенного слоя кэша torch cu121 — см. Dockerfile).
+# Runtime backend deps. Mirror of requirements.txt (kept for the Docker build's
+# carefully-tuned cu121 torch cache layer — see Dockerfile).
+dependencies = [
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.29.0",
+    "websockets>=12.0",
+    "python-dotenv>=1.0.0",
+    "openai-whisper>=20231117",
+    "torch>=2.2.0",
+    "torchaudio>=2.2.0",
+    # transformers <5: v5 требует torch>=2.4, а образ ставит torch 2.3.1 cu121 (kz-ASR).
+    # floor 4.45 = первый релиз с whisper-large-v3-turbo (kz-модель — turbo fine-tune).
+    "transformers>=4.45.0,<5",
+    "accelerate>=0.26.0,<2",  # нужен kz-загрузчику (low_cpu_mem_usage=True)
+    "numpy>=1.26.0",
+    "argostranslate>=1.9.0",
+    # Опционально: только при SOUNDSIGHT_ENABLE_LLM=true (agent/llm_refiner.py).
+    "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+# Захват жестов из видео (ml/extract_pose_clip.py). Тяжёлый, серверу не нужен:
+#   uv sync --extra ml
+ml = [
+    "mediapipe>=0.10,<0.11",
+    "opencv-python>=4.8",
+]
+# Тесты и инструменты разработки:  uv sync --extra dev
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.uv]
+# Это приложение (плоские модули agent/, core/, api/, …), а не устанавливаемый пакет —
+# uv не должен пытаться собирать корень, только ставить зависимости в .venv.
+package = false

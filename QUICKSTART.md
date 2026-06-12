@@ -4,9 +4,16 @@ Minimal local run flow for the Lecture Accessibility Agent.
 
 ## Install dependencies
 
+Dependencies are managed with [uv](https://docs.astral.sh/uv/). It creates the
+virtualenv and installs from `uv.lock` in one step:
+
 ```bash
-pip install -r requirements.txt
+uv sync                  # backend runtime deps
+uv sync --extra dev      # + pytest (to run the test suite)
 ```
+
+> No GPU torch here — `uv sync` pulls CPU torch from PyPI. For a local CUDA run,
+> install a matching torch build yourself (the Docker image handles cu121).
 
 ## Configure environment
 
@@ -15,7 +22,7 @@ Copy the local environment file if the project expects one and set the ASR model
 ## Start the app
 
 ```bash
-python main.py
+uv run python main.py
 ```
 
 Default local address:

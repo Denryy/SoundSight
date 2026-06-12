@@ -27,7 +27,7 @@ MediaPipe Holistic, после чего 3D-ориентиры (landmarks) ана
   * растопырка пальцев (spread) шумная, по умолчанию пишется только если
     заметная.
 
-Зависимости: см. ml/requirements.txt (mediapipe, opencv-python, numpy).
+Зависимости: uv sync --extra ml (mediapipe, opencv-python, numpy).
 """
 
 from __future__ import annotations

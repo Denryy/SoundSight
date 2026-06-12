@@ -11,13 +11,13 @@
 суставные углы контракта поз (`frontend-react/src/avatar3d/poseTypes.ts`).
 
 ```bash
-pip install -r ml/requirements.txt
+uv sync --extra ml    # mediapipe + opencv (тяжёлые, серверу не нужны)
 
 # проверить, что математика ретаргета цела (MediaPipe не нужен)
-python ml/extract_pose_clip.py --self-test
+uv run python ml/extract_pose_clip.py --self-test
 
 # жест «спасибо» из видео сразу в лексикон бэкенда
-python ml/extract_pose_clip.py video/spasibo.mp4 \
+uv run python ml/extract_pose_clip.py video/spasibo.mp4 \
     --gloss thanks --ru "спасибо" --aliases "thank,thank you" \
     --merge avatar/native_lexicon.json --start 0.4 --end 2.1
 ```
