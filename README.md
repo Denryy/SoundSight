@@ -4,10 +4,6 @@ An autonomous accessibility agent that transforms live speech into multiple acce
 
 Built as a competition prototype for **AI Agents Cup**.
 
-<p align="center">
-<img src="assets/IMG_6286.JPG" width="900">
-</p>
-
 ---
 
 ## Problem
