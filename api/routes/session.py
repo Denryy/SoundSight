@@ -1,8 +1,12 @@
+import logging
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from core.session import session_manager
 from core.pipeline import pipeline
+
+logger = logging.getLogger("soundsight.session")
 
 router = APIRouter(prefix="/session", tags=["session"])
 
@@ -48,9 +52,18 @@ async def set_mode(mode: str) -> dict:
         raise HTTPException(status_code=400, detail=f"Invalid mode. Use: {_VALID_MODES}")
     import asyncio
     loop = asyncio.get_running_loop()
-    await loop.run_in_executor(None, pipeline.set_asr_mode, mode)
+    try:
+        await loop.run_in_executor(None, pipeline.set_asr_mode, mode)
+    except Exception:
+        # The engine reverts to the previous working mode on reload failure
+        # (see WhisperEngine.set_mode); report it and echo the actual mode.
+        logger.exception("ASR mode switch to %s failed", mode)
+        raise HTTPException(
+            status_code=503,
+            detail=f"ASR model switch failed; kept previous mode '{pipeline.asr_mode}'",
+        )
     pipeline.reset_state()  # clear agent state on lang switch
-    return {"mode": mode}
+    return {"mode": pipeline.asr_mode}
 
 
 @router.get("/mode")

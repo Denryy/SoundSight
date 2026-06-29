@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
-    <title>SoundSight · Агент доступности лекций</title>
+    <title>SoundSight · доступность лекций для слабослышащих</title>
 
     <!-- Типографика: Space Grotesk (заголовки) + Inter (текст/субтитры — читаемость). -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -13,6 +13,21 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
+
+    <!-- Снимок НАТИВНОГО WebAssembly.instantiateStreaming ДО CWASA. allcsa.js —
+         обычный (не module) скрипт в head, поэтому исполняется РАНЬШE main.tsx и
+         затирает instantiateStreaming своим WASM-загрузчиком. Если снять оригинал
+         только в main.tsx, снимок окажется уже подменённым, и MediaPipe (живое
+         зеркало) не загрузит свой wasm — камера включится и сразу выключится.
+         Снимаем здесь, до allcsa.js; main.tsx этот снимок не перезатирает. -->
+    <script>
+      try {
+        if (typeof WebAssembly !== "undefined" &&
+            typeof WebAssembly.instantiateStreaming === "function") {
+          window.__origWasmStreaming = WebAssembly.instantiateStreaming.bind(WebAssembly);
+        }
+      } catch (e) { /* нет WASM — зеркало просто не запустится, остальное работает */ }
+    </script>
 
     <!-- ВАЖНО (ТЗ §6.6): CWASA-движок аватара грузится строго из …/vhg2026/cwa/ —
          там лежит WASM генерации анимации. Локальная копия без WASM не анимирует. -->

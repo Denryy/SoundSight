@@ -209,6 +209,11 @@ export class Humanoid {
   private headJ: [THREE.Group, THREE.Group, THREE.Group];
   private arms: { r: ArmRig; l: ArmRig };
 
+  // Переопределение мировой ориентации кисти (live-зеркало): ставится на узел
+  // wrDev («Hand») поверх каналов tw/wr. null — обычный канальный режим.
+  private handOverride: { r: THREE.Quaternion | null; l: THREE.Quaternion | null } = { r: null, l: null };
+  private _ovParent = new THREE.Quaternion();
+
   constructor() {
     const skin = mat(SKIN);
     const skinD = mat(SKIN_DARK);
@@ -353,6 +358,33 @@ export class Humanoid {
     this.spineJ[0].rotation.x = g("spine0");
     this.spineJ[1].rotation.y = g("spine1");
     this.spineJ[2].rotation.z = g("spine2");
+
+    this.applyHandOverride();
+  }
+
+  /**
+   * Переопределить мировую ориентацию кисти (узел wrDev) — для live-зеркала, где
+   * ориентация считается базис-кватернионом из landmark'ов, минуя tw/wr. null
+   * возвращает к канальному режиму. Применяется в конце applyChannels.
+   */
+  setHandWorldOverride(side: "r" | "l", q: THREE.Quaternion | null): void {
+    this.handOverride[side] = q;
+  }
+
+  private applyHandOverride(): void {
+    if (!this.handOverride.r && !this.handOverride.l) return;
+    this.root.updateMatrixWorld(true); // мировые матрицы по только что выставленным каналам
+    for (const side of ["r", "l"] as const) {
+      const q = this.handOverride[side];
+      if (!q) continue;
+      const wrDev = this.arms[side].wrDev;
+      const parent = wrDev.parent;
+      if (!parent) continue;
+      // Локальный поворот, дающий целевую МИРОВУЮ ориентацию: local = parent⁻¹ · q.
+      parent.getWorldQuaternion(this._ovParent);
+      wrDev.quaternion.copy(this._ovParent.invert()).multiply(q);
+      wrDev.updateWorldMatrix(false, true); // обновить кисть+пальцы (читает скиновый ретаргет)
+    }
   }
 
   private applyArm(ap: string, hp: string, rig: ArmRig, side: 1 | -1, ch: Channels): void {

@@ -1,6 +1,6 @@
 # SoundSight Quick Start
 
-Minimal local run flow for the Lecture Accessibility Agent.
+Minimal local run flow for SoundSight.
 
 ## Install dependencies
 

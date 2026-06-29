@@ -64,6 +64,20 @@ export interface Pose {
   spine?: [number, number, number];
 }
 
+/** Кватернион {x,y,z,w} — мировая ориентация кисти для live-зеркала. */
+export interface Quat {
+  x: number;
+  y: number;
+  z: number;
+  w: number;
+}
+
+/** Мировые ориентации кистей (live-зеркало): переопределяют запястье аватара. */
+export interface HandWorld {
+  r?: Quat;
+  l?: Quat;
+}
+
 // ── Клипы и трек (то, что присылает бэкенд в payload.avatar_pose) ────────────
 
 export interface ClipFrame {

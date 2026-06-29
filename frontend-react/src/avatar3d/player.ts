@@ -18,11 +18,13 @@ import {
   flattenPose,
   type Channels,
   type ClipFrame,
+  type HandWorld,
   type NativeLexicon,
   type Pose,
   type PoseTrack,
 } from "./poseTypes";
 import { FS_ARM, FS_BASE, GAP_POSE, REST, letterDef } from "./poses";
+import { ChannelEuroFilter } from "./oneEuro";
 
 const MAX_QUEUE = 8; // как у CWASA: не копить отставание (ТЗ §6.6)
 
@@ -35,6 +37,8 @@ const SKINNED_MODEL_URL: string | null = "/models/connor.glb";
 interface AvatarBody {
   readonly root: THREE.Object3D;
   applyChannels(ch: Channels): void;
+  /** Переопределить мировую ориентацию кисти (live-зеркало) или снять (null). */
+  setHandWorldOverride?(side: "r" | "l", q: THREE.Quaternion | null): void;
 }
 
 // Тайминги (мс) — подобраны под разборчивый, но живой темп дактиля.
@@ -44,6 +48,15 @@ const DOUBLE_DIP = 95; // «клевок» между одинаковыми б�
 const GLOSS_TRANS = 260; // вход в жест/стойку
 const GAP_MS = 170; // пауза между словами
 const REST_TRANS = 600; // возврат в позу покоя
+
+// Live-зеркало (камера → аватар). Дрожь/лаг убирает 1€-фильтр (oneEuro.ts) на
+// входе каждого кадра камеры; этот лерп лишь доинтерполирует ~30fps цель до 60fps
+// рендера, поэтому может быть отзывчивее (раньше 0.35 нёс ещё и сглаживание).
+const LIVE_SMOOTH = 0.5;
+// Параметры 1€-фильтра для каналов-градусов: низкий срез в покое (давит дрожь),
+// рост со скоростью (давит лаг). Подбираются на глаз в «Аватар-лаб».
+const LIVE_MINCUTOFF = 1.0; // Гц
+const LIVE_BETA = 0.02;     // рост среза на градус/сек скорости
 
 interface Key {
   t: number;
@@ -76,7 +89,7 @@ function sample(keys: Key[], t: number): Channels {
   return out;
 }
 
-type Mode = "idle" | "anim" | "static";
+type Mode = "idle" | "anim" | "static" | "live";
 
 export class NativeAvatarController {
   private scene = new THREE.Scene();
@@ -87,12 +100,17 @@ export class NativeAvatarController {
   private resizeObs: ResizeObserver | null = null;
   private raf = 0;
   private running = false;
+  private disposed = false;
 
   private lexicon: NativeLexicon | null = null;
   private queue: PoseTrack[] = [];
   private active: { keys: Key[]; start: number; thenRest: boolean } | null = null;
   private mode: Mode = "idle";
   private cur: Channels = { ...REST_CH };
+  private liveTarget: Channels = { ...REST_CH }; // цель live-зеркала (после 1€-фильтра)
+  private liveFilter = new ChannelEuroFilter(LIVE_MINCUTOFF, LIVE_BETA);
+  // Мировые ориентации кистей из камеры (переопределяют запястье в live-режиме).
+  private liveHands: { r: THREE.Quaternion | null; l: THREE.Quaternion | null } = { r: null, l: null };
 
   private ready = false;
   private readyListeners = new Set<(ready: boolean) => void>();
@@ -126,6 +144,13 @@ export class NativeAvatarController {
     try {
       const skinned = new SkinnedHumanoid();
       await skinned.load(url);
+      // Контроллер мог быть освобождён, пока грузилась модель (экран «Аватар-лаб»
+      // размонтировался) — иначе ниже мы бы воскресили мёртвый аватар и подвесили
+      // glTF/текстуры в утечку.
+      if (this.disposed) {
+        skinned.dispose();
+        return;
+      }
       this.scene.remove(this.humanoid.root);
       this.humanoid = skinned;
       this.scene.add(skinned.root);
@@ -139,6 +164,10 @@ export class NativeAvatarController {
 
   /** Примонтировать canvas в контейнер. Безопасно вызывать повторно. */
   attach(container: HTMLElement): void {
+    // Повторный attach = контроллер снова живой (важно для StrictMode в dev:
+    // он делает mount→dispose→mount, иначе после dispose флаг навсегда гасил бы
+    // applyLivePose и ронял скиновую модель в loadSkinned).
+    this.disposed = false;
     if (!this.renderer) {
       try {
         this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -184,6 +213,7 @@ export class NativeAvatarController {
 
   /** Полное освобождение ресурсов (для НЕ-синглтонных экземпляров — Лаб). */
   dispose(): void {
+    this.disposed = true;
     this.detach();
     if (this.raf) cancelAnimationFrame(this.raf);
     this.running = false;
@@ -403,6 +433,33 @@ export class NativeAvatarController {
     this.goRest();
   }
 
+  // ── Live-зеркало (камера → аватар) ──────────────────────────────────────
+  // Каждый кадр MediaPipe даёт частичную позу; держим её целью, а tick плавно
+  // подтягивает к ней текущую позу (сглаживание дрожания распознавания).
+
+  /** Обновить цель живого зеркала позой кадра (вход в режим «live»). */
+  applyLivePose(pose: Pose, hands?: HandWorld): void {
+    if (this.disposed) return; // кадр камеры пришёл после освобождения — игнор
+    const entering = this.mode !== "live";
+    this.queue = [];
+    this.active = null;
+    this.mode = "live";
+    if (entering) this.liveFilter.reset(); // не тянуть состояние из прошлого сеанса
+    // 1€-фильтр поканально по реальному dt кадров камеры → де-джиттернутая цель.
+    const target = merged({ ...REST_CH }, pose);
+    this.liveTarget = this.liveFilter.filter(target, performance.now());
+    // Ориентация кистей — мировым кватернионом (минуя tw/wr): стабильно, без торса.
+    this.liveHands.r = hands?.r ? new THREE.Quaternion(hands.r.x, hands.r.y, hands.r.z, hands.r.w) : null;
+    this.liveHands.l = hands?.l ? new THREE.Quaternion(hands.l.x, hands.l.y, hands.l.z, hands.l.w) : null;
+  }
+
+  /** Выйти из живого зеркала и плавно вернуться в покой. */
+  stopMirror(): void {
+    if (this.mode !== "live") return;
+    this.mode = "anim";
+    this.goRest();
+  }
+
   private playImmediate(track: PoseTrack): void {
     this.queue = [];
     this.mode = "anim";
@@ -415,6 +472,25 @@ export class NativeAvatarController {
 
   private tick(): void {
     const now = performance.now();
+
+    // Live-зеркало: плавно подтягиваем текущую позу к цели кадра камеры.
+    if (this.mode === "live") {
+      const next: Channels = { ...this.cur };
+      for (const k in this.liveTarget) {
+        const tv = this.liveTarget[k] ?? 0;
+        const cv = this.cur[k] ?? tv;
+        next[k] = cv + (tv - cv) * LIVE_SMOOTH;
+      }
+      this.cur = next;
+      // Кисти — мировым кватернионом поверх каналов (стабильная ориентация).
+      this.humanoid.setHandWorldOverride?.("r", this.liveHands.r);
+      this.humanoid.setHandWorldOverride?.("l", this.liveHands.l);
+      this.humanoid.applyChannels(this.cur);
+      if (this.renderer && this.container && this.container.clientWidth > 0) {
+        this.renderer.render(this.scene, this.camera);
+      }
+      return;
+    }
 
     if (this.active) {
       const t = now - this.active.start;
@@ -443,6 +519,9 @@ export class NativeAvatarController {
       frame["rArm.sh1"] = (frame["rArm.sh1"] ?? 0) + b * 0.7;
       frame["lArm.sh1"] = (frame["lArm.sh1"] ?? 0) + b * 0.7;
     }
+    // Вне live-режима снимаем переопределение кисти (жесты/дактиль рисуют сами).
+    this.humanoid.setHandWorldOverride?.("r", null);
+    this.humanoid.setHandWorldOverride?.("l", null);
     this.humanoid.applyChannels(frame);
 
     if (this.renderer && this.container && this.container.clientWidth > 0) {

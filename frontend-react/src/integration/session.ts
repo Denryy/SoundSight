@@ -43,6 +43,7 @@ export class SessionController {
   private mediaStream: MediaStream | null = null;
   private workletNode: AudioWorkletNode | null = null;
   private active = false;
+  private starting = false;
   private listeners: { [K in keyof SessionEvents]: Set<SessionEvents[K]> } = {
     interim: new Set(),
     final: new Set(),
@@ -71,59 +72,66 @@ export class SessionController {
 
   /** Старт сессии: микрофон → POST /session/start → WS → захват аудио. */
   async start(deviceId?: string): Promise<void> {
-    if (this.active) return;
-
-    // 1. Микрофон (ТЗ §7: нет доступа → понятное сообщение, не падать).
+    // `starting` — синхронный замок: `active` поднимается только ПОСЛЕ await'а
+    // /session/start, так что без него двойной клик успел бы запустить две сессии
+    // (два микрофона, два WebSocket'а). Снимается в finally на любом выходе.
+    if (this.active || this.starting) return;
+    this.starting = true;
     try {
-      const audio: MediaTrackConstraints | boolean = deviceId
-        ? { deviceId: { exact: deviceId } }
-        : true;
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio,
-        video: false,
-      });
-    } catch (e) {
-      this.emit("error", `Нет доступа к микрофону: ${(e as Error).message}`);
-      this.emit("phase", "error", "Нет доступа к микрофону");
-      return;
+      // 1. Микрофон (ТЗ §7: нет доступа → понятное сообщение, не падать).
+      try {
+        const audio: MediaTrackConstraints | boolean = deviceId
+          ? { deviceId: { exact: deviceId } }
+          : true;
+        this.mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio,
+          video: false,
+        });
+      } catch (e) {
+        this.emit("error", `Нет доступа к микрофону: ${(e as Error).message}`);
+        this.emit("phase", "error", "Нет доступа к микрофону");
+        return;
+      }
+
+      // 2. Старт сессии на бэкенде.
+      this.emit("phase", "connecting", "Подключение…");
+      try {
+        await api.startSession();
+      } catch (e) {
+        this.cleanupAudio();
+        this.emit("error", `Сервер недоступен: ${(e as Error).message}`);
+        this.emit("phase", "error", "Сервер недоступен");
+        return;
+      }
+
+      this.active = true;
+
+      // 3. WebSocket.
+      this.emit("phase", "connecting", "Открытие канала…");
+      try {
+        await this.openWs();
+      } catch {
+        this.active = false;
+        this.cleanupAudio();
+        this.emit("error", "Не удалось открыть WebSocket-канал.");
+        this.emit("phase", "error", "Соединение не открылось");
+        return;
+      }
+
+      // 4. Захват аудио.
+      try {
+        await this.startCapture();
+      } catch (e) {
+        await this.stop();
+        this.emit("error", `Ошибка захвата аудио: ${(e as Error).message}`);
+        this.emit("phase", "error", "Ошибка захвата аудио");
+        return;
+      }
+
+      this.emit("phase", "recording", "Запись");
+    } finally {
+      this.starting = false;
     }
-
-    // 2. Старт сессии на бэкенде.
-    this.emit("phase", "connecting", "Подключение…");
-    try {
-      await api.startSession();
-    } catch (e) {
-      this.cleanupAudio();
-      this.emit("error", `Сервер недоступен: ${(e as Error).message}`);
-      this.emit("phase", "error", "Сервер недоступен");
-      return;
-    }
-
-    this.active = true;
-
-    // 3. WebSocket.
-    this.emit("phase", "connecting", "Открытие канала…");
-    try {
-      await this.openWs();
-    } catch {
-      this.active = false;
-      this.cleanupAudio();
-      this.emit("error", "Не удалось открыть WebSocket-канал.");
-      this.emit("phase", "error", "Соединение не открылось");
-      return;
-    }
-
-    // 4. Захват аудио.
-    try {
-      await this.startCapture();
-    } catch (e) {
-      await this.stop();
-      this.emit("error", `Ошибка захвата аудио: ${(e as Error).message}`);
-      this.emit("phase", "error", "Ошибка захвата аудио");
-      return;
-    }
-
-    this.emit("phase", "recording", "Запись");
   }
 
   /** Стоп сессии: закрыть WS, POST /session/stop, отдать session_id для резюме. */

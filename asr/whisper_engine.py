@@ -19,6 +19,7 @@ logger = logging.getLogger("soundsight.asr")
 class WhisperEngine(BaseASREngine):
     def __init__(self) -> None:
         self._model = None
+        self._backend: str | None = None      # "whisper" | "transformers", set on load()
         self._device = "cpu"
         self._use_fp16 = False
         self._mode = config.ASR_MODE          # "auto" | "ru" | "en" | "kz"
@@ -95,24 +96,42 @@ class WhisperEngine(BaseASREngine):
         return self._device
 
     def set_mode(self, mode: str) -> None:
-        """Switch language mode at runtime. Reloads model if backend changes."""
+        """Switch language mode at runtime. Reloads model if the backend changes.
+
+        Failure-safe: if the new backend fails to load (OOM, missing KZ download,
+        import error), revert to the previous mode and restore the previous
+        working model instead of leaving the engine wedged with ``_model=None``.
+        Re-raises so the caller can surface a clean error.
+        """
         if mode == self._mode:
             return
-        old_backend = getattr(self, "_backend", None)
-        self._mode = mode
+        old_mode = self._mode
+        old_backend = self._backend
         needs_kz = mode == "kz"
         was_kz = old_backend == "transformers"
-        if needs_kz != was_kz:
-            # Backend change — reload
-            logger.info("Mode change %s → %s, reloading...",
-                        old_backend, "kz" if needs_kz else "whisper")
-            self._model = None
-            import torch as _t
-            if self._device == "cuda":
-                _t.cuda.empty_cache()
-            self.load()
-        else:
+        if needs_kz == was_kz:
+            # Same backend — only the language tag changes, no reload needed.
+            self._mode = mode
             logger.info("Mode switched to %s (no reload needed)", mode)
+            return
+
+        logger.info("Mode change %s → %s, reloading...", old_backend, mode)
+        self._mode = mode
+        self._model = None
+        import torch as _t
+        if self._device == "cuda":
+            _t.cuda.empty_cache()
+        try:
+            self.load()
+        except Exception:
+            logger.exception("ASR reload for mode %s failed — reverting to %s", mode, old_mode)
+            self._mode = old_mode
+            self._model = None
+            try:
+                self.load()  # restore the previously working backend
+            except Exception:
+                logger.exception("Restoring previous ASR mode %s also failed", old_mode)
+            raise
 
     def transcribe_raw(self, audio_np: np.ndarray, fast: bool = False) -> ASRChunk:
         """Transcribe mono float32 PCM.

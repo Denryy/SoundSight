@@ -1,7 +1,7 @@
 [project]
 name = "soundsight"
 version = "0.1.0"
-description = "SoundSight — Lecture Accessibility Agent: live speech → subtitles, sign-language avatar, and auto-refreshing session summary."
+description = "SoundSight — live lecture accessibility for the hearing-impaired: live speech → subtitles, sign-language avatar, and auto-refreshing session summary."
 readme = "README.md"
 requires-python = ">=3.11"
 

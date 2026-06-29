@@ -201,7 +201,12 @@ class Pipeline:
         if audio_np.size == 0:
             return None
         if src_rate != TARGET_RATE:
-            audio_np = _resample(audio_np, src_rate, TARGET_RATE)
+            # Resampling a multi-second buffer is CPU-bound (torchaudio) — keep it
+            # off the event loop so the live audio stream never stalls.
+            loop = asyncio.get_running_loop()
+            audio_np = await loop.run_in_executor(
+                None, _resample, audio_np, src_rate, TARGET_RATE
+            )
 
         # ── Accumulate into the current utterance, track speech vs silence ──
         rms = float(np.sqrt(np.mean(audio_np ** 2)))

@@ -2,19 +2,9 @@ import { useEffect, useState } from "react";
 
 import type { Screen } from "../App";
 import { api } from "../integration/api";
+import { formatDateShort } from "../integration/format";
 import type { SessionMeta } from "../integration/types";
 import { useSession } from "../state/SessionContext";
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("ru-RU", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 // Главная (ТЗ §4.1) — рабочий дашборд: запуск сессии + недавние сессии.
 export function Home({ onNavigate }: { onNavigate: (s: Screen) => void }) {
@@ -134,7 +124,7 @@ export function Home({ onNavigate }: { onNavigate: (s: Screen) => void }) {
                 >
                   <span className="recent-item-title">{s.title}</span>
                   <span className="recent-item-meta">
-                    {formatDate(s.started_at)} · {s.chunks} фрагм.
+                    {formatDateShort(s.started_at)} · {s.chunks} фрагм.
                   </span>
                 </button>
               ))}

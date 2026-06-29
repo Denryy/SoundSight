@@ -1,4 +1,4 @@
-# SoundSight – Lecture Accessibility Agent
+# SoundSight — live lecture accessibility for the hearing-impaired
 
 An autonomous accessibility agent that transforms live speech into multiple accessible formats for people with hearing impairments.
 

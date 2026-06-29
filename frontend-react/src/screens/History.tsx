@@ -1,23 +1,12 @@
 import { useEffect, useState } from "react";
 
 import { api } from "../integration/api";
+import { formatDateFull } from "../integration/format";
 import type { SessionMeta } from "../integration/types";
 
 // История сессий (ТЗ §4.4): реальные завершённые сессии с бэкенда (GET /sessions).
 // Сессии хранятся в памяти сервера (последние 50) — переживают переходы между
 // экранами, но не перезапуск контейнера.
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("ru-RU", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export function History() {
   const [sessions, setSessions] = useState<SessionMeta[]>([]);
@@ -71,7 +60,7 @@ export function History() {
               className="history-card"
               onClick={() => setOpenId(s.session_id)}
             >
-              <span className="history-card-date">{formatDate(s.started_at)}</span>
+              <span className="history-card-date">{formatDateFull(s.started_at)}</span>
               <span className="history-card-title">{s.title}</span>
               <span className="history-card-preview">
                 {s.summary.split("\n")[0]}

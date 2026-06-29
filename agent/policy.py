@@ -13,7 +13,15 @@ import re
 from typing import Optional
 
 from agent.decision import AgentDecision
-from core.lexicon import STOPWORDS, HALLUCINATION_EXACT, HALLUCINATION_SUBSTR
+from core.lexicon import (
+    STOPWORDS,
+    HALLUCINATION_EXACT,
+    HALLUCINATION_SUBSTR,
+    FILLER_EXACT,
+    FILLER_WORDS,
+    FILLER_PATTERNS,
+    FILLER_RATIO_THRESHOLD,
+)
 
 # ---------------------------------------------------------------------------
 # Thresholds (tune per deployment)
@@ -50,28 +58,13 @@ LONG_SEGMENT_WORDS = 20
 _STOPWORDS: set[str] = STOPWORDS
 
 # ---------------------------------------------------------------------------
-# Filler / noise patterns
+# Filler / noise patterns — single source of truth in core.lexicon
 # ---------------------------------------------------------------------------
 
-_FILLER_EXACT: set[str] = {
-    "да", "нет", "ок", "окей", "хорошо", "ладно", "понятно",
-    "yes", "no", "ok", "okay", "hmm", "uh", "um", "ah", "eh",
-    "угу", "ага", "эм", "эээ", "ну", "ааа", "ммм",
-}
-
-# Words that count as filler when checking filler-ratio of a sentence
-_FILLER_WORDS: set[str] = _FILLER_EXACT | {
-    "это", "вот", "как", "бы", "так", "вот", "именно", "ну",
-    "типа", "короче", "значит", "ладно", "слушай", "слушайте",
-}
-
-# Filler ratio threshold: if ≥ 80% of words are filler/stopwords → reject
-_FILLER_RATIO_THRESHOLD = 0.80
-
-_FILLER_PATTERNS: list[re.Pattern] = [
-    re.compile(r"^[эа-я]{1,3}[\.…,]*$", re.I),   # "эм", "ааа", "ну"
-    re.compile(r"^[a-z]{1,3}[\.…,]*$", re.I),     # "um", "uh", "ah"
-]
+_FILLER_EXACT = FILLER_EXACT
+_FILLER_WORDS = FILLER_WORDS
+_FILLER_RATIO_THRESHOLD = FILLER_RATIO_THRESHOLD
+_FILLER_PATTERNS = FILLER_PATTERNS
 
 
 # ---------------------------------------------------------------------------

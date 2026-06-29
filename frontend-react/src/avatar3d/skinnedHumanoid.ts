@@ -20,6 +20,16 @@
 // flexLocal = ось сгиба пальца (направление пальца × нормаль ладони) в кадре
 // родителя; dir (в какую сторону «в кулак») определяется геометрически — поэтому
 // работает на обеих зеркальных кистях. Большой палец остаётся на дельта-переносе.
+//
+// РАЗВЕДЕНИЕ ПАЛЬЦЕВ (abduction). Только сгиба мало: без него буквы, различающиеся
+// лишь растопыриванием (В/И, Р-крест, ASL U/V…), сливаются в одну форму. Сгиб
+// драйвера живёт на curls[0], а разведение — на его РОДИТЕЛЕ (sg = spread-сустав),
+// который дельта-перенос не видел. Поэтому на проксимальной фаланге (MCP) добавляем
+// поворот вокруг нормали ладони модели на угол sg драйвера:
+//     bone.local = R(flexLocal, dir·θ) · R(palmNormal, sign·φ) · rest_local
+// sign (один на кисть) ставит +поворот в сторону «от среднего пальца»; знак каждого
+// пальца уже закодирован в φ самим драйвером (SPREAD_DIR), так что общий поворот
+// вокруг нормали разводит пальцы веером.
 
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -30,6 +40,7 @@ import { BONE_MAP, HAND_OF, MIXAMO_BIND, cleanMixamoName } from "./mixamoRig";
 
 const TARGET_HEIGHT = 1.9; // метры; рост модели подгоняется под кадр камеры
 const FINGER_RE = /Hand(Index|Middle|Ring|Pinky)/; // пальцы кроме большого
+const FINGER_MCP_RE = /Hand(Index|Middle|Ring|Pinky)1$/; // проксимальная фаланга
 
 const wpos = (o: THREE.Object3D) => o.getWorldPosition(new THREE.Vector3());
 
@@ -50,11 +61,35 @@ function fingerFlexAxis(side: string, f: string, pn: THREE.Vector3, bones: Map<s
 
 /** Знак сгиба: +поворот должен вести кончик пальца К ЗАПЯСТЬЮ (в кулак). */
 function curlDir(side: string, f: string, flex: THREE.Vector3, bones: Map<string, THREE.Object3D>): number {
-  const w = wpos(bones.get(side + "Hand")!);
-  const mcp = wpos(bones.get(`${side}Hand${f}1`)!);
-  const tip = wpos(bones.get(`${side}Hand${f}4`)!);
+  // Кость-кончик (…4) может отсутствовать на риге без tip-костей — тогда знак по
+  // умолчанию (+1), чтобы load() не падал (иначе весь скиновый аватар отвалится).
+  const handB = bones.get(side + "Hand");
+  const mcpB = bones.get(`${side}Hand${f}1`);
+  const tipB = bones.get(`${side}Hand${f}4`);
+  if (!handB || !mcpB || !tipB) return 1;
+  const w = wpos(handB);
+  const mcp = wpos(mcpB);
+  const tip = wpos(tipB);
   const dist = (deg: number) => tip.clone().sub(mcp).applyAxisAngle(flex, (deg * Math.PI) / 180).add(mcp).distanceTo(w);
   return dist(30) < dist(-30) ? 1 : -1;
+}
+
+/**
+ * Знак разведения для кисти: при +повороте указательного вокруг нормали ладони
+ * его кончик должен УДАЛЯТЬСЯ от среднего (растопыривание). Один знак на кисть:
+ * драйвер уже кодирует направление каждого пальца (SPREAD_DIR) в своём повороте,
+ * а равномерный поворот вокруг общей нормали ладони веером разводит остальные.
+ */
+function spreadSign(side: string, pn: THREE.Vector3, bones: Map<string, THREE.Object3D>): number {
+  const mcpB = bones.get(side + "HandIndex1");
+  const tipB = bones.get(side + "HandIndex4");
+  const refB = bones.get(side + "HandMiddle4");
+  if (!mcpB || !tipB || !refB) return 1; // нет tip-костей на риге — знак по умолчанию
+  const mcp = wpos(mcpB);
+  const tip = wpos(tipB);
+  const ref = wpos(refB);
+  const dist = (deg: number) => tip.clone().sub(mcp).applyAxisAngle(pn, (deg * Math.PI) / 180).add(mcp).distanceTo(ref);
+  return dist(12) > dist(-12) ? 1 : -1;
 }
 
 interface Pair {
@@ -70,6 +105,11 @@ interface Pair {
   restLocal?: THREE.Quaternion; // локальный поворот кости в rest
   bindLocal?: THREE.Quaternion; // локальный поворот сустава драйвера в bind
   dir?: number; // знак направления «в кулак»
+  // Разведение (abduction) — только для проксимальной фаланги (…1, MCP):
+  mcp?: boolean;
+  spreadLocal?: THREE.Vector3; // ось разведения (нормаль ладони) в кадре родителя
+  spreadSign?: number; // знак: +разворот драйвера → разведение пальца «от среднего»
+  spreadDriver?: THREE.Object3D; // сустав-«разведение» драйвера (родитель curls[0])
 }
 
 export class SkinnedHumanoid {
@@ -93,6 +133,7 @@ export class SkinnedHumanoid {
   private _alignInv = new THREE.Quaternion();
   private _rel = new THREE.Quaternion();
   private _fq = new THREE.Quaternion();
+  private _sq = new THREE.Quaternion();
 
   constructor() {
     // Связываем драйвер в A-позе Mixamo и запоминаем повороты суставов
@@ -127,6 +168,7 @@ export class SkinnedHumanoid {
     const seg = this.driver.driverSegments();
     const missing: string[] = [];
     const palm: Record<string, THREE.Vector3> = {};
+    const spreadS: Record<string, number> = {};
     for (const b of BONE_MAP) {
       const bone = bones.get(b.bone);
       const driver = seg[b.bone];
@@ -148,8 +190,17 @@ export class SkinnedHumanoid {
           pair.finger = true;
           pair.bindLocal = this.bindLocal[b.bone];
           pair.restLocal = bone.quaternion.clone();
-          pair.flexLocal = flexW.clone().applyQuaternion(bone.parent!.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
+          const parentInv = bone.parent!.getWorldQuaternion(new THREE.Quaternion()).invert();
+          pair.flexLocal = flexW.clone().applyQuaternion(parentInv).normalize();
           pair.dir = curlDir(b.fingerOf, fm[1], flexW, bones);
+          // Разведение задаём только на проксимальной фаланге (MCP) — там, где у
+          // драйвера живёт сустав spread (родитель curls[0]). Ось — нормаль ладони.
+          if (FINGER_MCP_RE.test(b.bone)) {
+            pair.mcp = true;
+            pair.spreadLocal = pn.clone().applyQuaternion(parentInv).normalize();
+            pair.spreadSign = spreadS[b.fingerOf] ?? (spreadS[b.fingerOf] = spreadSign(b.fingerOf, pn, bones));
+            pair.spreadDriver = driver.parent ?? undefined;
+          }
         } else {
           // большой палец — перенос по ладони (как раньше)
           pair.driverHand = seg[HAND_OF[b.fingerOf]];
@@ -186,6 +237,15 @@ export class SkinnedHumanoid {
     return this.loaded;
   }
 
+  /**
+   * Переопределить мировую ориентацию кисти (live-зеркало): делегируем драйверу —
+   * его узел wrDev получит ориентацию, а ретаргет перенесёт её на кость модели по
+   * дельте, как и любую другую кость.
+   */
+  setHandWorldOverride(side: "r" | "l", q: THREE.Quaternion | null): void {
+    this.driver.setHandWorldOverride(side, q);
+  }
+
   /** Применить канальный срез: гоним драйвер и переносим повороты на кости. */
   applyChannels(ch: Channels): void {
     if (!this.loaded) return;
@@ -201,7 +261,16 @@ export class SkinnedHumanoid {
         this._rel.copy(p.bindLocal!).invert().multiply(p.driver.quaternion);
         const theta = Math.abs(2 * Math.atan2(this._rel.x, this._rel.w));
         this._fq.setFromAxisAngle(p.flexLocal!, p.dir! * theta);
-        p.bone.quaternion.copy(this._fq).multiply(p.restLocal!);
+        if (p.mcp && p.spreadDriver) {
+          // Разведение: угол сустава spread драйвера (чистый поворот вокруг Z)
+          // переносим на поворот MCP вокруг нормали ладони модели.
+          const sg = p.spreadDriver.quaternion;
+          const spread = 2 * Math.atan2(sg.z, sg.w);
+          this._sq.setFromAxisAngle(p.spreadLocal!, p.spreadSign! * spread);
+          p.bone.quaternion.copy(this._fq).multiply(this._sq).multiply(p.restLocal!);
+        } else {
+          p.bone.quaternion.copy(this._fq).multiply(p.restLocal!);
+        }
         p.bone.updateWorldMatrix(false, false);
         continue;
       }

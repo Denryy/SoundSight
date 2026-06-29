@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SoundSight — симуляция аватара</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #14161c; overflow: hidden; }
+      #stage { width: 100vw; height: 100vh; }
+      #label {
+        position: fixed; left: 12px; top: 10px; z-index: 10;
+        font: 14px/1.4 monospace; color: #cbd5e1; white-space: pre;
+        background: rgba(0,0,0,0.45); padding: 6px 10px; border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage"></div>
+    <div id="label">sim: готов</div>
+    <script type="module" src="/src/sim.tsx"></script>
+  </body>
+</html>

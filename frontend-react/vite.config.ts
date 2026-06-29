@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -25,5 +26,12 @@ export default defineConfig({
     outDir: "dist",
     // Бэкенд монтирует ассеты на /assets — совпадает с дефолтом Vite.
     assetsDir: "assets",
+    rollupOptions: {
+      // Доп. вход — симуляционная страница аватара (sim.html) для headless-проверки.
+      input: {
+        main: resolve(__dirname, "index.html"),
+        sim: resolve(__dirname, "sim.html"),
+      },
+    },
   },
 });

@@ -11,6 +11,7 @@ Sign modes (core.config.SIGN_LANG):
   "isl"              — bundled lexical dictionary only (varied but sparse).
 """
 
+import logging
 import os
 import re
 from dataclasses import dataclass
@@ -18,6 +19,8 @@ from dataclasses import dataclass
 from core.config import config
 from avatar.sigml_lookup import text_to_sigml, lexical_sign
 from avatar.asl_fingerspell import text_to_asl, fingerspell, _SKIP
+
+logger = logging.getLogger("soundsight.avatar")
 
 _WORD_RE = re.compile(r"[a-z]+")
 # How much of each segment the avatar signs. Higher = more coverage but the
@@ -86,16 +89,19 @@ class SignAvatarEngine:
             from avatar.translator import translate_to_en
             en_text = translate_to_en(text)
         except Exception:
+            logger.warning("translation failed — signing source text as-is", exc_info=True)
             en_text = text
 
         sigml = _build_sigml(text, en_text)
 
         # Свой 3D-аватар: pose-track строится всегда (дёшево, без перевода —
-        # en_text уже посчитан). Ошибка здесь не должна ломать SiGML-ветку.
+        # en_text уже посчитан). Ошибка здесь не должна ломать SiGML-ветку, но
+        # молча глотать её нельзя — иначе сломанный pose-pipeline невидим.
         try:
             from avatar.pose_synthesis import build_pose_track
             pose = build_pose_track(text, en_text)
         except Exception:
+            logger.warning("pose-track build failed — native avatar skipped this segment", exc_info=True)
             pose = None
 
         duration_ms = max(1000, len(text.split()) * 500)

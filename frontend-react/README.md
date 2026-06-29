@@ -1,6 +1,6 @@
 # SoundSight Frontend (новый дизайн)
 
-Новый фронтенд для **SoundSight — Lecture Accessibility Agent** (React + Vite + TypeScript).
+Новый фронтенд для **SoundSight** — доступность лекций для слабослышащих (React + Vite + TypeScript).
 Совместим с существующим бэкендом по контракту из ТЗ (`SoundSight_Frontend_TZ.md`, §6).
 
 ## Запуск (разработка)
